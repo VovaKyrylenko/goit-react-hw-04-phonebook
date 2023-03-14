@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormComponent from './form/Form';
 import * as Yup from 'yup';
 import { nanoid } from 'nanoid';
@@ -6,46 +6,45 @@ import FriendList from './list/List';
 import SearchBar from './Finder/Finder';
 import { Container } from './form/Form.styled';
 
-export class App extends Component {
-  LOCAL_ID = 'contacts';
+const App = () => {
+  const LOCAL_ID = 'contacts';
 
-  state = {
-    contacts: [],
-    filter: '',
-  };
-
-  initialValues = {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
+  const initialValues = {
     name: '',
     phoneNumber: '',
   };
 
-  onSubmit = (values, { resetForm }) => {
-    if (this.state.contacts.some(contact => contact.name === values.name)) {
+  const FormSchema = Yup.object().shape({
+    name: Yup.string().required('Name is required'),
+    phoneNumber: Yup.string()
+      .required('Phone number is required')
+      .matches(/^[0-9]+$/, 'Invalid phone number'),
+  });
+
+  const onSubmit = (values, { resetForm }) => {
+    if (contacts.some(contact => contact.name === values.name)) {
       alert(`${values.name} is already in your contacts`);
       resetForm();
     } else {
       values.id = nanoid();
-      this.setState(prevState => ({
-        contacts: [...prevState['contacts'], values],
-      }));
+      setContacts([...contacts, values]);
       resetForm();
     }
   };
 
-  deleteContactById = event => {
-    this.setState({
-      contacts: this.state.contacts.filter(
-        contact => contact.id !== event.currentTarget.id
-      ),
-    });
+  const deleteContactById = event => {
+    setContacts(
+      contacts.filter(contact => contact.id !== event.currentTarget.id)
+    );
   };
 
-  handleInputChange = event => {
-    this.setState({ filter: event.target.value });
+  const handleInputChange = event => {
+    setFilter(event.target.value);
   };
 
-  handleFilter = () => {
-    const { filter, contacts } = this.state;
+  const handleFilter = () => {
     if (filter.trim() === '') {
       return contacts;
     }
@@ -55,45 +54,38 @@ export class App extends Component {
     );
   };
 
-  FormSchema = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
-    phoneNumber: Yup.string()
-      .required('Phone number is required')
-      .matches(/^[0-9]+$/, 'Invalid phone number'),
-  });
-
-  componentDidMount() {
-    localStorage.getItem(this.LOCAL_ID) &&
-      this.setState({
-        contacts: JSON.parse(localStorage.getItem(this.LOCAL_ID)),
-      });
+  useEffect(() => {
+    localStorage.getItem(LOCAL_ID) &&
+      setContacts(JSON.parse(localStorage.getItem(LOCAL_ID)));
     console.log(
-      'localStorage.getItem(this.LOCAL_ID):',
-      JSON.parse(localStorage.getItem(this.LOCAL_ID))
+      'localStorage.getItem(LOCAL_ID):',
+      JSON.parse(localStorage.getItem(LOCAL_ID))
     );
-  }
-  render() {
-    return (
-      <>
-        <Container>
-          <h2>Phonebook</h2>
-          <FormComponent
-            onSubmit={this.onSubmit}
-            initialValues={this.initialValues}
-            validationSchema={this.FormSchema}
-          />
-          <h2 style={{ marginTop: '3rem', marginBottom: '0px' }}>Contacts</h2>
-          <SearchBar
-            value={this.state.filter}
-            onChange={this.handleInputChange}
-          />
-          <FriendList
-            friends={this.handleFilter()}
-            deleteContactById={this.deleteContactById}
-            storageId={this.LOCAL_ID}
-          />
-        </Container>
-      </>
-    );
-  }
-}
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_ID, JSON.stringify(contacts));
+  }, [contacts]);
+
+  return (
+    <>
+      <Container>
+        <h2>Phonebook</h2>
+        <FormComponent
+          onSubmit={onSubmit}
+          initialValues={initialValues}
+          validationSchema={FormSchema}
+        />
+        <h2 style={{ marginTop: '3rem', marginBottom: '0px' }}>Contacts</h2>
+        <SearchBar value={filter} onChange={handleInputChange} />
+        <FriendList
+          friends={handleFilter()}
+          deleteContactById={deleteContactById}
+          storageId={LOCAL_ID}
+        />
+      </Container>
+    </>
+  );
+};
+
+export default App;

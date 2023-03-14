@@ -1,41 +1,36 @@
-import React, { PureComponent } from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { FriendListContainer, Span } from './List.styled';
 import FriendItem from 'components/ListItem/ListItem';
 
-class FriendList extends PureComponent {
-  areArraysIdentical(array1, array2) {
-    return JSON.stringify(array1) === JSON.stringify(array2);
-  }
-  componentDidUpdate(prevProps) {
-    if (!this.areArraysIdentical(prevProps.friends, this.props.friends)) {
-      localStorage.setItem(
-        this.props.storageId,
-        JSON.stringify(this.props.friends)
-      );
-    }
-  }
+function FriendList(props) {
+  const { friends, deleteContactById, storageId } = props;
 
-  render() {
-    return (
-      <>
-        <Span>Your contacts:</Span>
-        {this.props.friends.length === 0 ? (
-          <p>Nothing here</p>
-        ) : (
-          <FriendListContainer>
-            {this.props.friends.map(friend => (
-              <FriendItem
-                friend={friend}
-                deleteContactById={this.props.deleteContactById}
-                key={friend.id}
-              />
-            ))}
-          </FriendListContainer>
-        )}
-      </>
-    );
-  }
+  useEffect(() => {
+    const storedFriends = JSON.parse(localStorage.getItem(storageId)) || [];
+    if (JSON.stringify(storedFriends) !== JSON.stringify(friends)) {
+      localStorage.setItem(storageId, JSON.stringify(friends));
+    }
+  }, [friends, storageId]);
+
+  return (
+    <>
+      <Span>Your contacts:</Span>
+      {friends.length === 0 ? (
+        <p>Nothing here</p>
+      ) : (
+        <FriendListContainer>
+          {friends.map(friend => (
+            <FriendItem
+              friend={friend}
+              deleteContactById={deleteContactById}
+              key={friend.id}
+            />
+          ))}
+        </FriendListContainer>
+      )}
+    </>
+  );
 }
 
 FriendList.propTypes = {
@@ -46,7 +41,8 @@ FriendList.propTypes = {
       phoneNumber: PropTypes.string.isRequired,
     })
   ).isRequired,
-  // onDeleteFriend: PropTypes.func.isRequired,
+  deleteContactById: PropTypes.func.isRequired,
+  storageId: PropTypes.string.isRequired,
 };
 
 export default FriendList;
